@@ -7,7 +7,7 @@ from setuptools import (
     find_packages,
 )
 
-PACKAGE_VERSION = '1.0.0'
+PACKAGE_VERSION = '1.0.2'
 
 EXTRAS_REQUIRE = {
     'lint': [

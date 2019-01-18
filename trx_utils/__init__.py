@@ -20,7 +20,12 @@ from .currency import (  # noqa: F401
     to_sun
 )
 
-from .decorators import combomethod, reject_recursive_repeats  # noqa: F401
+from .decorators import (  # noqa: F401
+    combomethod,
+    reject_recursive_repeats,
+    deprecated_for
+)
+
 from .hexadecimal import (  # noqa: F401
     add_0x_prefix,
     decode_hex,
@@ -29,6 +34,7 @@ from .hexadecimal import (  # noqa: F401
     is_hex,
     remove_0x_prefix,
 )
+
 from .types import (  # noqa: F401
     is_boolean,
     is_bytes,

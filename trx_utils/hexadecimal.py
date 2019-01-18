@@ -8,7 +8,10 @@ import binascii
 import codecs
 import string
 
-from typing import Any, AnyStr
+from typing import (
+    Any,
+    AnyStr
+)
 
 
 # Type ignored for `codecs.decode()` due to lack of mypy support for 'hex' encoding

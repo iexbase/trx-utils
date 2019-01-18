@@ -1,6 +1,7 @@
-from typing import Any
 
 import base58
+
+from typing import Any
 from _sha256 import sha256
 from trx_utils.hexadecimal import (
     is_hex,
@@ -21,8 +22,8 @@ def is_hex_address(value: Any) -> bool:
     elif not is_hex(value):
         return False
     else:
-        unprefixed = remove_0x_prefix(value)
-        return len(unprefixed) == 40
+        un_prefixed = remove_0x_prefix(value)
+        return len(un_prefixed) == 40
 
 
 def is_binary_address(value: Any) -> bool:

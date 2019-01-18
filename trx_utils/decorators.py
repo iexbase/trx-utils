@@ -5,22 +5,26 @@
 # --------------------------------------------------------------------
 
 import functools
+import itertools
 import threading
 import warnings
-from typing import Callable
+
+from typing import Any, Callable, Dict
+
+from .types import is_text
 
 
-class combomethod:
+class combomethod(object):
     def __init__(self, method):
         self.method = method
 
-    def __get__(self, obj=None, obj_type=None) -> Callable:
+    def __get__(self, obj=None, objtype=None):
         @functools.wraps(self.method)
         def _wrapper(*args, **kwargs):
             if obj is not None:
                 return self.method(obj, *args, **kwargs)
             else:
-                return self.method(obj_type, *args, **kwargs)
+                return self.method(objtype, *args, **kwargs)
 
         return _wrapper
 
@@ -54,6 +58,7 @@ def deprecated_for(replace_message):
         >>> @deprecated_for("toBytes()")
         >>> def toAscii(arg):
     """
+
     def decorator(to_wrap):
         @functools.wraps(to_wrap)
         def wrapper(*args, **kwargs):
@@ -66,3 +71,59 @@ def deprecated_for(replace_message):
         return wrapper
 
     return decorator
+
+
+def validate_conversion_arguments(to_wrap):
+    """
+    Validates arguments for conversion functions.
+    - Only a single argument is present
+    - Kwarg must be 'primitive' 'hexstr' or 'text'
+    - If it is 'hexstr' or 'text' that it is a text type
+    """
+
+    @functools.wraps(to_wrap)
+    def wrapper(*args, **kwargs):
+        _assert_one_val(*args, **kwargs)
+        if kwargs:
+            _validate_supported_kwarg(kwargs)
+
+        if len(args) is 0 and "primitive" not in kwargs:
+            _assert_hexstr_or_text_kwarg_is_text_type(**kwargs)
+        return to_wrap(*args, **kwargs)
+
+    return wrapper
+
+
+def _validate_supported_kwarg(kwargs):
+    if next(iter(kwargs)) not in ["primitive", "hexstr", "text"]:
+        raise TypeError(
+            "Kwarg must be 'primitive', 'hexstr', or 'text'. "
+            "Instead, kwarg was: %r" % (next(iter(kwargs)))
+        )
+
+
+def _assert_one_val(*args, **kwargs):
+    if not _has_one_val(*args, **kwargs):
+        raise TypeError(
+            "Exactly one of the passed values can be specified. "
+            "Instead, values were: %r, %r" % (args, kwargs)
+        )
+
+
+def _has_one_val(*args, **kwargs):
+    vals = itertools.chain(args, kwargs.values())
+    not_nones = list(filter(lambda val: val is not None, vals))
+    return len(not_nones) == 1
+
+
+def _assert_hexstr_or_text_kwarg_is_text_type(**kwargs):
+    if not _hexstr_or_text_kwarg_is_text_type(**kwargs):
+        raise TypeError(
+            "Arguments passed as hexstr or text must be of text type. "
+            "Instead, value was: %r" % (repr(next(list(kwargs.values()))))
+        )
+
+
+def _hexstr_or_text_kwarg_is_text_type(**kwargs):
+    value = kwargs["hexstr"] if "hexstr" in kwargs else kwargs["text"]
+    return is_text(value)
