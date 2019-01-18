@@ -8,6 +8,16 @@ import pkg_resources
 import sys
 import warnings
 
+
+from .conversions import (  # noqa: F401
+    to_bytes,
+    to_hex,
+    to_int,
+    to_text,
+    hexstr_if_str,
+    text_if_str,
+)
+
 from .address import (  # noqa: F401
     is_address,
     is_binary_address,

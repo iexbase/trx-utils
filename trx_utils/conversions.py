@@ -1,18 +1,27 @@
-from trx_utils import (
+from typing import Callable, Union
+
+from .decorators import validate_conversion_arguments
+from .encoding import (
+    big_endian_to_int,
+    int_to_big_endian
+)
+from .hexadecimal import (
     add_0x_prefix,
+    decode_hex,
     encode_hex,
-    is_boolean,
-    is_string,
-    is_integer,
-    remove_0x_prefix,
-    decode_hex
+    is_hex,
+    remove_0x_prefix
 )
 
-from trx_utils.decorators import validate_conversion_arguments
-from trx_utils.encoding import big_endian_to_int
-from trx_utils.typing.misc import (
+from .types import (
+    is_boolean,
+    is_integer,
+    is_string
+)
+from .typing import (
+    HexStr,
     Primitives,
-    HexStr
+    T
 )
 
 
@@ -53,7 +62,7 @@ def to_hex(
 
 @validate_conversion_arguments
 def to_int(
-    primitive: Primitives = None, hexstr: HexStr = None, text: str = None
+        primitive: Primitives = None, hexstr: HexStr = None, text: str = None
 ) -> int:
     """
     Converts value to its integer representation.
@@ -98,3 +107,63 @@ def to_bytes(
     raise TypeError(
         "expected a bool, int, byte or bytearray in first arg, or keyword of hexstr or text"
     )
+
+
+@validate_conversion_arguments
+def to_text(
+        primitive: Primitives = None, hexstr: HexStr = None, text: str = None
+) -> str:
+    if hexstr is not None:
+        return to_bytes(hexstr=hexstr).decode("utf-8")
+    elif text is not None:
+        return text
+    elif isinstance(primitive, str):
+        return to_text(hexstr=primitive)
+    elif isinstance(primitive, (bytes, bytearray)):
+        return primitive.decode("utf-8")
+    elif is_integer(primitive):
+        byte_encoding = int_to_big_endian(primitive)
+        return to_text(byte_encoding)
+    raise TypeError("Expected an int, bytes, bytearray or hexstr.")
+
+
+def text_if_str(
+        to_type: Callable[..., T], text_or_primitive: Union[bytes, int, str]
+) -> T:
+    """
+    Convert to a type, assuming that strings can be only unicode text (not a hexstr)
+    :param text_or_primitive:
+    :param to_type:
+    :param to_type function: takes the arguments (primitive, hexstr=hexstr, text=text),
+        eg~ to_bytes, to_text, to_hex, to_int, etc
+    :param text_or_primitive bytes, str, int: value to convert
+    """
+    if isinstance(text_or_primitive, str):
+        (primitive, text) = (None, text_or_primitive)
+    else:
+        (primitive, text) = (text_or_primitive, None)
+    return to_type(primitive, text=text)
+
+
+def hexstr_if_str(
+        to_type: Callable[..., T], hexstr_or_primitive: Union[bytes, int, str]
+) -> T:
+    """
+    Convert to a type, assuming that strings can be only hexstr (not unicode text)
+    :param hexstr_or_primitive:
+    :param to_type:
+    :param to_type function: takes the arguments (primitive, hexstr=hexstr, text=text),
+        eg~ to_bytes, to_text, to_hex, to_int, etc
+    :param hexstr_or_primitive bytes, str, int: value to convert
+    """
+    if isinstance(hexstr_or_primitive, str):
+        (primitive, hexstr) = (None, hexstr_or_primitive)
+        if remove_0x_prefix(hexstr) and not is_hex(hexstr):
+            raise ValueError(
+                "when sending a str, it must be a hex string. Got: {0!r}".format(
+                    hexstr_or_primitive
+                )
+            )
+    else:
+        (primitive, hexstr) = (hexstr_or_primitive, None)
+    return to_type(primitive, hexstr=hexstr)
