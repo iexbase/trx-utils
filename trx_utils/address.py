@@ -1,4 +1,3 @@
-
 import base58
 
 from typing import Any
@@ -14,16 +13,17 @@ from trx_utils.types import (
 
 
 def is_hex_address(value: Any) -> bool:
-    """
-    Checks if the given string of text type is an address in hexadecimal encoded form.
-    """
-    if not is_text(value):
+    """Checks if the given string of text type is an address in hexadecimal encoded form."""
+    if len(value) != 42:
+        return False
+    elif not is_text(value):
         return False
     elif not is_hex(value):
         return False
     else:
-        un_prefixed = remove_0x_prefix(value)
-        return len(un_prefixed) == 40
+        return is_address(
+            base58.b58encode_check(bytes.fromhex(value))
+        )
 
 
 def is_binary_address(value: Any) -> bool:
